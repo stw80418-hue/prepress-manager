@@ -6,7 +6,7 @@ ROOT=Path(__file__).resolve().parents[1]
 
 def install(target, home):
     base={"codex": ".agents", "claude": ".claude"}[target]
-    dest=Path(home)/base/"skills"/"illustrator-preflight"
+    dest=Path(home)/base/"skills"/"prepress-manager"
     if dest.exists():
         raise FileExistsError("Destination exists; review or back up before updating: "+str(dest))
     files=[ROOT/n for n in ["SKILL.md","README.md","print_rules.json","accessibility_rules.json","requirements.txt","requirements-tested.txt"]]

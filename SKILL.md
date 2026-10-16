@@ -1,9 +1,9 @@
 ---
-name: illustrator-preflight
+name: prepress-manager
 description: Adobe Illustrator 與印刷檔案的唯讀印前 Preflight、TAC、圖片有效解析度、文字可讀性及色覺辨識健檢。使用者要求檢查 AI／PDF 是否能送印、依印刷廠規格檢查，或檢查文字、圖片、色彩、TAC、色盲友善時使用；產生繁體中文報告與問題預覽。
 ---
 
-# AI 印前完稿健檢
+# Prepress Manager｜印前管理員
 
 預設以 `--scope digital` 執行數位印刷重點健檢，交付 `PREFLIGHT_REPORT.md` 與問題預覽。未發現問題不代表一定可以送印。
 
@@ -68,7 +68,7 @@ WCAG 維持不加入預設流程；圖片檢查不會開啟對比或色覺模擬
 
 ## Codex 與 Claude Code
 
-本 Skill 使用共通 SKILL.md 格式與本機 Python／JSX，不依賴特定助理的工具名稱。從 Skill 的實際安裝根目錄定位 scripts 與設定。確認 Python 3.10+ 與 requirements.txt 套件可用；缺依賴須明確告知。Codex 可用 `$illustrator-preflight`；Claude Code 可用 `/illustrator-preflight`。安裝方式見 README.md。
+本 Skill 使用共通 SKILL.md 格式與本機 Python／JSX，不依賴特定助理的工具名稱。從 Skill 的實際安裝根目錄定位 scripts 與設定。確認 Python 3.10+ 與 requirements.txt 套件可用；缺依賴須明確告知。Codex 可用 `$prepress-manager`；Claude Code 可用 `/prepress-manager`。安裝方式見 README.md。
 
 ## 驗證
 

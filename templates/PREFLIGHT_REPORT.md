@@ -1,4 +1,4 @@
-# AI 印前完稿健檢
+# Prepress Manager｜印前管理員
 
 {summary}
 

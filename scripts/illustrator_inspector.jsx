@@ -1,4 +1,4 @@
-/* AI 印前完稿健檢 — read-only active-document inspector, ExtendScript ES3.
+/* Prepress Manager｜印前管理員 — read-only active-document inspector, ExtendScript ES3.
  * No save(), saveAs(), outline(), embed(), flatten(), or object mutation.
  * Run File > Scripts > Other Script after opening a COPY of the artwork.
  */

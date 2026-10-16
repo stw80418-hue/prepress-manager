@@ -1,4 +1,4 @@
-# illustrator-preflight｜AI 印前完稿健檢
+# Prepress Manager｜印前管理員
 
 供 **Codex 與 Claude Code** 使用的繁體中文、唯讀印前檢查 Skill。預設以數位印刷交付為主，檢查色彩模式、文字外框、出血尺寸、圖片有效解析度、圖片嵌入／連結、AI 版本相容性與四色黑。WCAG／色覺檢查不在預設範圍。
 
@@ -7,8 +7,8 @@
 需 Git、Python 3.10+。在終端機執行：
 
 ```sh
-git clone https://github.com/stw80418-hue/illustrator-preflight.git
-cd illustrator-preflight
+git clone https://github.com/stw80418-hue/prepress-manager.git
+cd prepress-manager
 python scripts/install_skill.py --target codex
 python scripts/install_skill.py --target claude
 python -m venv .venv
@@ -28,11 +28,11 @@ macOS／Linux：
 .venv/bin/python -m pytest tests -q
 ```
 
-安裝腳本只複製來源碼，不複製稿件與輸出，不覆寫既有 Skill。Codex 安裝到 `~/.agents/skills/illustrator-preflight`；Claude Code 到 `~/.claude/skills/illustrator-preflight`。若已有同名舊版（包括 Codex 的舊路徑 `~/.codex/skills`），請先備份並移出舊版以免重複載入。重新開啟對話，再指定剛建立的 Python 虛擬環境路徑。
+安裝腳本只複製來源碼，不複製稿件與輸出，不覆寫既有 Skill。Codex 安裝到 `~/.agents/skills/prepress-manager`；Claude Code 到 `~/.claude/skills/prepress-manager`。若已有同名舊版（包括 Codex 的舊路徑 `~/.codex/skills`），請先備份並移出舊版以免重複載入。重新開啟對話，再指定剛建立的 Python 虛擬環境路徑。
 
-Codex：`$illustrator-preflight 檢查這份 AI，以數位印刷為主。`
+Codex：`$prepress-manager 檢查這份 AI，以數位印刷為主。`
 
-Claude Code：`/illustrator-preflight 檢查這份 AI，以數位印刷為主。`
+Claude Code：`/prepress-manager 檢查這份 AI，以數位印刷為主。`
 
 兩者都可用自然語言要求檢查。這裡的 Claude 指本機 Claude Code，不保證 Claude 網頁版／Cowork 能執行本機 Illustrator。
 
@@ -62,3 +62,7 @@ python scripts/preflight.py /path/to/design.ai --scope digital --out /path/to/ne
 `pytest tests -q` 測試共用 Python 引擎；測試會在暫存目錄建立合成檔案。測試通過不代表已驗證 Illustrator 或印刷機台。依賴各自遵循上游授權（包含 PyMuPDF 的授權條款）。
 
 官方安裝格式：[Codex Skills](https://learn.chatgpt.com/docs/build-skills)、[Claude Code Skills](https://code.claude.com/docs/en/skills)。
+
+## 從舊名稱升級
+
+原名稱為 `illustrator-preflight`。請將舊 Skill 資料夾移到 skills 目錄外備份，再安裝 `prepress-manager`，避免兩個版本同時載入。原有稿件與歷次報告不需更名。
