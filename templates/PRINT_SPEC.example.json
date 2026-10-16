@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "source": "範例印刷廠規格.txt（請替換；本檔不是實際廠商規格）",
+  "review_status": "needs_review",
+  "overrides": {
+    "bleed_mm": 3,
+    "maximum_tac_percent": 280,
+    "minimum_font_size_pt": 6
+  },
+  "evidence": {
+    "bleed_mm": {"quote": "四邊出血各 3 mm", "location": "示例第 1 行"},
+    "maximum_tac_percent": {"quote": "總墨量不得超過 280%", "location": "示例第 2 行"},
+    "minimum_font_size_pt": {"quote": "最小字級 6 pt", "location": "示例第 3 行"}
+  },
+  "manual_requirements": ["範例：白墨版需獨立圖層，名稱 White Ink；請核對原廠要求後替換。"],
+  "conflicts": [],
+  "notes": ["此檔故意保持 needs_review；不能直接用範例當真實印刷規格。"]
+}

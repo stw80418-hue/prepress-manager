@@ -1,0 +1,6 @@
+interface:
+  display_name: "AI 印前完稿健檢"
+  short_description: "數位印刷健檢：色彩模式、文字外框、出血尺寸與圖片解析度"
+  default_prompt: "請使用 $illustrator-preflight，對我提供的檔案執行數位印刷重點健檢（色彩模式、文字外框、出血尺寸、解析度）。"
+policy:
+  allow_implicit_invocation: true

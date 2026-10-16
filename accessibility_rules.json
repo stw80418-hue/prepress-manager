@@ -1,0 +1,11 @@
+{
+  "standard": "WCAG-2.2-AA-screen-reference",
+  "contrast_normal": 4.5,
+  "contrast_large": 3,
+  "large_text_pt": 18,
+  "large_bold_text_pt": 14,
+  "cvd_severity": 100,
+  "color_pair_delta_e76_warning": 10,
+  "preview_dpi": 120,
+  "thin_weight_keywords": ["thin", "light", "extralight", "hairline"]
+}

@@ -1,0 +1,8 @@
+PyMuPDF==1.28.2
+pikepdf==10.13.0.post1
+Pillow==12.3.0
+numpy==2.5.3
+python-docx==1.2.0
+jsonschema==4.26.0
+colorspacious==1.1.2
+pytest==9.1.1

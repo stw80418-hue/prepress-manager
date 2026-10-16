@@ -1,0 +1,8 @@
+pymupdf>=1.26,<2
+pikepdf>=10,<11
+Pillow>=11,<13
+numpy>=2,<3
+python-docx>=1.1,<2
+jsonschema>=4.23,<5
+colorspacious==1.1.2
+pytest>=8,<10
