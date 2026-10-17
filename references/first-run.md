@@ -19,7 +19,7 @@ JSX 不儲存 AI，但尚未完成實際 Illustrator 宿主驗證。單靠 PDF �
 
 ## 設定與規格
 
-`--settings job-settings.json` 可設定 `bleed_mm`、`minimum_image_ppi`、`target_size_mm`、`maximum_ai_major_version` 等。印刷廠規格經核對後以 `--spec PRINT_SPEC.json` 使用，優先於使用者設定。Schema 見 PRINT_SPEC.schema.json。
+成品尺寸與出血可直接用 `--size 210x297 --bleed 3`（優先於設定檔，印刷廠規格仍最優先）。`--settings job-settings.json` 可設定 `bleed_mm`、`minimum_image_ppi`、`target_size_mm`、`maximum_ai_major_version` 等。印刷廠規格經核對後以 `--spec PRINT_SPEC.json` 使用，優先於使用者設定。Schema 見 PRINT_SPEC.schema.json。
 
 一般使用 `digital`，不生成 WCAG 或色覺報告。`all`／`accessibility` 僅限另行明確要求。
 

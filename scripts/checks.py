@@ -91,10 +91,12 @@ def analyze(doc, rules, access, scope="all"):
         rect = b["rect"]
         size = [(rect[2]-rect[0])/PT_PER_MM, (rect[3]-rect[1])/PT_PER_MM]
         sizes.append(size)
-        target = rules["target_size_mm"]
-        bad = target and any(abs(x-y) > rules["size_tolerance_mm"] for x, y in zip(size, target))
-        emit("dimensions", "unknown" if b.get("trim_explicit") is False else "red" if bad else "green", "文件尺寸（mm）", o, size, target or "未指定成品尺寸", reason="依頁框／Artboard 座標換算；未宣告 TrimBox 時不能確認成品尺寸。")
         bleed = b.get("bleed_mm")
+        status, title, current, reason = size_verdict(size, bleed, rules)
+        if b.get("trim_explicit") is False:
+            status, reason = "unknown", "PDF 未宣告 TrimBox，暫用 MediaBox；不能確認成品尺寸。" + reason
+        emit("dimensions", status, title, o, current, rules["target_size_mm"] or "未指定成品尺寸", reason,
+             "物件 > 工作區域 > 工作區域選項：核對寬高；出血在「檔案 > 文件設定」另外設定，不要做進工作區域。")
         emit("bleed", "unknown" if bleed is None else "red" if min(bleed.values()) < rules["bleed_mm"]-1e-6 else "green",
              "出血框：上、下、左、右", o, bleed, rules["bleed_mm"],
              "缺少可靠出血資料時不可用 MediaBox 或物件外觀猜測出血。", "文件設定 > 出血；輸出 PDF 後核對 TrimBox、BleedBox。")
@@ -283,3 +285,50 @@ def analyze(doc, rules, access, scope="all"):
     for req in doc.get("manual_requirements", []):
         emit("printer_manual", "unknown", "印刷廠其他完稿要求", current=req, reason="此要求需人工確認；不因未實作而忽略。")
     return findings, special
+
+
+COMMON_SIZES = {"A3": (297, 420), "A4": (210, 297), "A5": (148, 210), "A6": (105, 148), "B5": (182, 257),
+                "16K": (195, 270), "8K": (270, 390), "名片": (90, 54), "名片（日式）": (91, 55), "明信片": (148, 100)}
+
+
+def size_verdict(size, bleed, rules):
+    """Compare an Artboard with the finished size; catch bleed built into the Artboard and swapped orientation."""
+    tol, need, target = rules["size_tolerance_mm"], rules["bleed_mm"], rules["target_size_mm"]
+    w, h = (round(v, 2) for v in size)
+    current = {"artboard_mm": [w, h]}
+    if bleed is not None:
+        current["with_bleed_mm"] = [round(w+bleed["left"]+bleed["right"], 2), round(h+bleed["top"]+bleed["bottom"], 2)]
+    has_bleed = bleed is not None and max(bleed.values()) > 1e-6
+
+    def match(a, b):
+        return all(abs(x-y) <= tol for x, y in zip(a, b))
+
+    def grown(t):
+        return [t[0]+2*need, t[1]+2*need]
+
+    if not target:
+        hints = []
+        for name, t in COMMON_SIZES.items():
+            for label, shape in [("", t), ("（橫式）", t[::-1])]:
+                if match(size, shape):
+                    hints.append(f"{name}{label} {shape[0]}×{shape[1]}")
+                elif match(size, grown(shape)):
+                    hints.append(f"{name}{label} {shape[0]}×{shape[1]} 含四邊 {need:g} mm 出血")
+        current["looks_like"] = hints or None
+        return ("unknown", "文件尺寸：未指定成品尺寸，請自行確認", current,
+                "沒有成品尺寸可比對；請對照印刷廠或客戶需求。" + ("尺寸看起來是：" + "、".join(hints) + "。" if hints else ""))
+    t = list(target)
+    current["target_mm"] = t
+    if match(size, t):
+        return "green", "成品尺寸符合", current, "工作區域等於成品尺寸。"
+    if match(size, t[::-1]):
+        return "yellow", "尺寸符合但方向相反（直式／橫式）", current, "寬高互換；請確認版面方向是否正確。"
+    if match(size, grown(t)) or match(size, grown(t[::-1])):
+        if has_bleed:
+            return ("red", "出血重複：工作區域已含出血，又另外設了出血", current,
+                    f"工作區域 = 成品 + 四邊 {need:g} mm，文件又另設出血；輸出後成品會多一圈，裁切位置錯誤。")
+        return ("yellow", "工作區域含出血：成品 = 工作區域 − 四邊出血", current,
+                f"工作區域比成品大四邊 {need:g} mm，看起來把出血做進版面。有些印刷廠接受，但需另外標示裁切線；建議工作區域設成成品尺寸、出血另外設定。")
+    diff = [round(x-y, 2) for x, y in zip(size, t)]
+    current["difference_mm"] = diff
+    return "red", "成品尺寸不符", current, f"工作區域與成品尺寸相差 寬 {diff[0]:+g} mm、高 {diff[1]:+g} mm。"

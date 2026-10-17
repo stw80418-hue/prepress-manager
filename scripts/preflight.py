@@ -27,7 +27,7 @@ def digest(path):
     return h.hexdigest()
 
 
-def load_rules(spec=None, settings=None, accessibility=None):
+def load_rules(spec=None, settings=None, accessibility=None, cli=None):
     import jsonschema
     rules=read_json(ROOT/"print_rules.json")
     schema=read_json(ROOT/"references/PRINT_SPEC.schema.json")
@@ -36,6 +36,10 @@ def load_rules(spec=None, settings=None, accessibility=None):
         custom=read_json(settings)
         jsonschema.validate(custom,schema["properties"]["overrides"])
         rules.update(custom);provenance.update({k:"User settings" for k in custom})
+    if cli:
+        # --size / --bleed are user settings: they beat skill defaults and the settings file, never the printer spec.
+        jsonschema.validate(cli,schema["properties"]["overrides"])
+        rules.update(cli);provenance.update({k:"User settings (command line)" for k in cli})
     manual=[];spec_data=None
     if spec:
         spec_data=read_json(spec);jsonschema.validate(spec_data,schema)
@@ -199,8 +203,15 @@ def report(out,doc,findings,special,previews,rules,provenance,scope):
         if x is None:
             return "無法取得／未指定"
         return json.dumps(x,ensure_ascii=False) if isinstance(x,(dict,list)) else str(x).replace("\n"," ")
-    sizes=[{"artboard":b["id"],"mm":[round((b["rect"][2]-b["rect"][0])/PT_PER_MM,3),round((b["rect"][3]-b["rect"][1])/PT_PER_MM,3)]} for b in doc["artboards"]]
-    summary=f"檔案：{doc.get('source')}\n\n尺寸（寬 × 高 mm）：{fmt(sizes)}\n\nArtboard：{len(doc['artboards'])}\n\n使用印刷規格：見 EFFECTIVE_RULES.json（逐欄來源）\n\n檢查日期：{datetime.now().astimezone().isoformat()}\n\n引擎：{doc.get('engine')}；範圍：{scope}"
+    def size_line(b):
+        w,h=(b["rect"][2]-b["rect"][0])/PT_PER_MM,(b["rect"][3]-b["rect"][1])/PT_PER_MM
+        bl=b.get("bleed_mm")
+        extra=f"，含出血 {w+bl['left']+bl['right']:.1f} × {h+bl['top']+bl['bottom']:.1f}" if bl and max(bl.values())>1e-6 else "，出血未設定" if bl else "，出血無法取得"
+        return f"- Artboard {b['id']}：{w:.1f} × {h:.1f}{extra}"
+    target=rules.get("target_size_mm")
+    finished=f"{target[0]:g} × {target[1]:g}" if target else "未指定（請對照印刷廠或客戶需求）"
+    sizes="\n".join(size_line(b) for b in doc["artboards"])
+    summary=f"檔案：{doc.get('source')}\n\n成品尺寸（寬 × 高 mm）：{finished}；出血標準：{rules['bleed_mm']:g} mm\n\nArtboard 尺寸（寬 × 高 mm）：\n\n{sizes}\n\nArtboard：{len(doc['artboards'])}\n\n使用印刷規格：見 EFFECTIVE_RULES.json（逐欄來源）\n\n檢查日期：{datetime.now().astimezone().isoformat()}\n\n引擎：{doc.get('engine')}；範圍：{scope}"
     limits="\n".join("- "+x for x in dict.fromkeys(doc.get("limitations",[])))
     limits+="\n- 本次範圍以外項目未檢查；通過僅代表該條證據符合目前門檻。\n- 報告計數以檢查結果為單位，同一物件可能有多條結果。\n- 無可靠位置的 Issue 只列報告，不猜測縮圖座標。"
     links="\n\n".join(f"Artboard {p['artboard']}\n\n"+"\n\n".join(f"{k}\n\n![{k}]({p[k]})" for k in ["original","protanopia","deuteranopia","tritanopia"] if k in p) for p in previews) or "⚪ 無法自動確認：未取得可渲染的 Artboard 預覽。"
@@ -225,14 +236,14 @@ def report(out,doc,findings,special,previews,rules,provenance,scope):
         (out/filename).write_text(text,encoding="utf-8")
 
 
-def run(input_path,out,*,spec=None,settings=None,accessibility=None,scope="all",annotations=None):
+def run(input_path,out,*,spec=None,settings=None,accessibility=None,scope="all",annotations=None,cli=None):
     path=Path(input_path).resolve();out=Path(out).resolve()
     if out.exists():
         raise FileExistsError("Output must be a NEW directory; existing files will not be overwritten")
     if path==out or out in path.parents:
         raise ValueError("Output must not contain the input")
     original_hash=digest(path)
-    rules,access,provenance,manual,spec_data=load_rules(spec,settings,accessibility)
+    rules,access,provenance,manual,spec_data=load_rules(spec,settings,accessibility,cli)
     doc,originals,pdf_path=inspect(path,rules,settings)
     doc["manual_requirements"]=manual
     if annotations:
@@ -275,6 +286,17 @@ def run(input_path,out,*,spec=None,settings=None,accessibility=None,scope="all",
     return findings
 
 
+def parse_size(text):
+    parts=text.lower().replace("×","x").replace("*","x").replace("mm","").split("x")
+    try:
+        size=[float(v) for v in parts]
+    except ValueError:
+        size=[]
+    if len(size)!=2 or min(size)<=0:
+        raise argparse.ArgumentTypeError("尺寸格式為 寬x高（mm），例如 210x297")
+    return size
+
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument("input",type=Path)
@@ -284,14 +306,17 @@ def main():
     p.add_argument("--accessibility-settings",type=Path)
     p.add_argument("--annotations",type=Path)
     p.add_argument("--pdf",type=Path,help="Also inspect a companion final PDF in a separate report; no unsafe object merging")
+    p.add_argument("--size",type=parse_size,help="Finished (trim) size in mm, e.g. 210x297")
+    p.add_argument("--bleed",type=float,help="Required bleed in mm on each side, e.g. 3")
     p.add_argument("--scope",choices=["digital","all","text","images","color","tac","accessibility"],default="digital")
     a=p.parse_args()
     # Default beside the artwork so private reports never land inside the installed skill.
     out=a.out or a.input.resolve().parent/f"{a.input.stem}-preflight-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
     try:
-        findings=run(a.input,out,spec=a.spec,settings=a.settings,accessibility=a.accessibility_settings,scope=a.scope,annotations=a.annotations)
+        cli={k:v for k,v in {"target_size_mm":a.size,"bleed_mm":a.bleed}.items() if v is not None}
+        findings=run(a.input,out,spec=a.spec,settings=a.settings,accessibility=a.accessibility_settings,scope=a.scope,annotations=a.annotations,cli=cli)
         if a.pdf:
-            run(a.pdf,out/"final-pdf",spec=a.spec,settings=a.settings,accessibility=a.accessibility_settings,scope=a.scope)
+            run(a.pdf,out/"final-pdf",spec=a.spec,settings=a.settings,accessibility=a.accessibility_settings,scope=a.scope,cli=cli)
             with (out/"PREFLIGHT_REPORT.md").open("a",encoding="utf-8") as f:
                 f.write("\n\n最終 PDF 檢查：[獨立報告](final-pdf/PREFLIGHT_REPORT.md)。未自動假設與 AI 物件一一對應；請核對版本、尺寸與頁序。\n")
         print(str(out.resolve()))
