@@ -65,8 +65,22 @@ def analyze(doc, rules, access, scope="all"):
 
     images = [o for o in doc.get("objects", []) if o.get("kind") == "image"]
     totals = {s: sum(embedding_state(o) == s for o in images) for s in ["embedded", "linked", "missing", "unknown"]}
-    status = "red" if totals["missing"] else "yellow" if totals["linked"] else "unknown" if totals["unknown"] or not images else "green"
-    emit("image_embedding_summary", status, "原 AI 圖片嵌入／連結總覽", current={"placement_counts": totals},
+    # AI header %%DocumentFiles lists external links even when only the PDF-compatible content is readable.
+    linked_files = doc.get("ai_document_files") or []
+    header = {s: sum(f["state"] == s for f in linked_files) for s in ["linked", "missing"]}
+    for f in linked_files:
+        emit("image_link", "red" if f["state"] == "missing" else "yellow",
+             "連結檔遺失：找不到原始檔" if f["state"] == "missing" else "圖片未嵌入：使用外部連結",
+             {"name": f["name"], "artboard": None, "evidence": "AI 檔頭 %%DocumentFiles（Illustrator 記錄的外部連結清單）"},
+             {"state": f["state"], "path": f["path"], "found_at": f["found_at"]}, "已嵌入，或連結檔與 AI 一起交付",
+             "AI 記錄了這個外部連結檔。" + ("在記錄路徑、AI 同資料夾與 Links 資料夾都找不到；送印時圖片可能變成低解析預覽或空白。只檢查這台電腦，換電腦執行時路徑可能不同。" if f["state"] == "missing" else "交付 AI 時需附上原圖或封裝，否則印刷廠開檔會缺圖。"),
+             "視窗 > 連結：找到這個檔名，" + ("重新連結正確檔案" if f["state"] == "missing" else "依印刷廠要求封裝或嵌入（在副本操作）") + "。檔頭不記錄位置，需在連結面板定位。",
+             category="images")
+    status = "red" if totals["missing"] or header["missing"] else "yellow" if totals["linked"] or header["linked"] else "unknown" if totals["unknown"] or not images else "green"
+    current = {"placement_counts": totals}
+    if doc.get("ai_document_files") is not None:
+        current["ai_header_links"] = header
+    emit("image_embedding_summary", status, "原 AI 圖片嵌入／連結總覽", current=current,
          expected="已嵌入，或依印刷廠要求完整封裝外部連結圖",
          reason="計數為放置事件，跨 Artboard 或重複使用可能重複列出。PDF 內有圖片不代表原 AI 已嵌入；未取得圖片也不能證明全部已嵌入。",
          fix="Illustrator > 視窗 > 連結，或在原生文件副本執行 illustrator_inspector.jsx；確認嵌入、連結與遺失狀態。", category="images")

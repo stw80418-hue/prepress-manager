@@ -5,6 +5,52 @@ from pathlib import Path
 from metrics import PT_PER_MM, raster_tac
 
 
+def _decode(raw):
+    for encoding in ("utf-8", "cp950", "mbcs"):
+        try:
+            return raw.decode(encoding)
+        except (UnicodeDecodeError, LookupError):
+            continue
+    return raw.decode("latin-1")
+
+
+def document_files(pdf, ai_path):
+    """Externally linked files listed in the AI header (%%DocumentFiles); embedded images are not listed.
+
+    Existence is checked on this computer only: the recorded path, then the same file name beside the AI
+    or in a Links folder (where Illustrator also searches when relinking).
+    """
+    meta = None
+    for page in pdf.pages:
+        private = page.obj.get("/PieceInfo", {}).get("/Illustrator", {}).get("/Private", {})
+        if private.get("/AIMetaData") is not None:
+            meta = private["/AIMetaData"].read_bytes()
+            break
+    if meta is None:
+        return None
+    paths, collecting = [], False
+    for line in meta.splitlines():
+        if line.startswith(b"%%DocumentFiles:"):
+            collecting = True
+            value = line[len(b"%%DocumentFiles:"):]
+        elif collecting and line.startswith(b"%%+"):
+            value = line[3:]
+        else:
+            collecting = False
+            continue
+        value = _decode(value).strip()
+        if value and value not in paths:
+            paths.append(value)
+    files = []
+    for value in paths:
+        name = value.replace("\\", "/").rsplit("/", 1)[-1].rsplit(":", 1)[-1]
+        candidates = [Path(value), ai_path.parent/name, ai_path.parent/"Links"/name]
+        found = next((c for c in candidates if c.is_file()), None)
+        files.append({"path": value, "name": name, "state": "linked" if found else "missing",
+                      "found_at": str(found) if found else None})
+    return files
+
+
 def inspect_pdf(path, rules):
     import pymupdf as fitz
     import pikepdf
@@ -46,6 +92,7 @@ def inspect_pdf(path, rules):
             evidence["creator_major"] = int(match.group(1)) if match else None
             evidence["saved_major"] = None
             model["ai_version"] = evidence
+            model["ai_document_files"] = document_files(pdf, Path(path))
         for index, (pp, page) in enumerate(zip(pdf.pages, rendered), 1):
             raw = pp.obj
             trim_explicit, bleed_explicit = raw.get("/TrimBox"), raw.get("/BleedBox")

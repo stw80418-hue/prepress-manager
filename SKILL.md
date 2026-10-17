@@ -24,7 +24,7 @@ description: Adobe Illustrator／PDF 的唯讀印前檢查（以數位印刷送�
 
 圖片嵌入／連結為主要檢查，與解析度分開列出。報告顯示圖片名稱、Artboard、圖層、位置、外部路徑及證據範圍：已嵌入綠燈、外部連結未嵌入黃燈、連結遺失紅燈、資料不足灰燈。總數為放置事件，不宣稱獨立來源圖片數。
 
-操作與判讀見 [圖片嵌入檢查方式](references/image-embedding.md)。Illustrator JSX 讀取原生 PlacedItem／RasterItem 狀態；僅讀 PDF 或 AI 的 PDF 相容區時，原 AI 嵌入狀態必須灰燈。沒有圖片記錄也不能宣布全部嵌入。現有 JSX 尚待 Illustrator 宿主驗證，不能宣稱已完成真實原生檢查。
+操作與判讀見 [圖片嵌入檢查方式](references/image-embedding.md)。Illustrator JSX 讀取原生 PlacedItem／RasterItem 狀態；僅讀 AI 的 PDF 相容區時，會另讀 AI 檔頭 `%%DocumentFiles`（Illustrator 記錄的外部連結清單）：找不到檔案紅燈、找得到黃燈；檔頭不記錄位置，個別圖片的嵌入狀態仍為灰燈。純 PDF 無此資料，一律灰燈。沒有圖片記錄也不能宣布全部嵌入。現有 JSX 尚待 Illustrator 宿主驗證，不能宣稱已完成真實原生檢查。
 
 WCAG 維持不加入預設流程；圖片檢查不會開啟對比或色覺模擬。不自動執行嵌入、封裝或重新連結。
 

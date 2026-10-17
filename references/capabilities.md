@@ -13,7 +13,7 @@
 | 安全邊界 | 文字與已標 important 的物件 bbox | 文字 bbox／已標重要物件；不能自動保證找到 Logo／QR |
 | 色彩 | CMYK、RGB、Gray、Lab、Spot；列色票（含未使用者） | 原始 content operators 的 process colors、Separation／DeviceN 名稱；不把渲染 RGB 當原始 RGB |
 | 圖片 PPI | linked raster 像素由 Pillow 讀，DOM boundingBox × matrix；嵌入像素未知 | 每個 image occurrence 的像素與 transform；同圖不同大小分別計算 |
-| Missing Link | File.exists，可讀取時列連結路徑 | PDF 只能知道已內嵌於 PDF，不能還原 AI 連結 |
+| Missing Link | File.exists，可讀取時列連結路徑 | AI：讀檔頭 `%%DocumentFiles` 外部連結清單，依記錄路徑、AI 同資料夾、Links 資料夾檢查是否存在（只限執行的這台電腦；無位置資訊）。純 PDF 無法還原 AI 連結 |
 | 字型 | characterAttributes 的 font、style、size；混合文字逐 run | 擷取文字與 PDF font reference；未實作完整缺字／嵌字合規驗證 |
 | Missing Font | 已開檔可能替代字型，因此預設灰燈；可加已核對證據 | 不能藉已渲染字型證明原 AI 不缺字型 |
 | Live／Outlined | TextFrame 證明 live；一般 path 不證明 outlined | 路徑無法還原字型或原字級；不將「無文字」當「已外框」 |

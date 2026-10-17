@@ -39,3 +39,35 @@ def test_no_images_not_all_embedded():
     doc=cases()[0][2];r,a,*_=load_rules()
     findings,_=analyze(doc,r,a,"images")
     assert len(findings)==1 and findings[0]["status"]=="unknown"
+
+def test_ai_header_links_detect_missing_file(tmp_path):
+    import pikepdf
+    from pdf_engine import inspect_pdf
+    pdf_path=tmp_path/"source.pdf";make_pdf(pdf_path,1)
+    kept=tmp_path/"kept 照片.jpg";kept.write_bytes(b"x")
+    gone=tmp_path/"deleted.jpg"
+    header=("%!PS-Adobe-3.0\r\n%%DocumentFiles:"+str(kept)+"\r\n%%+"+str(gone)+"\r\n%AI5_FileFormat 14.0\r\n").encode("utf-8")
+    ai=tmp_path/"design.ai"
+    with pikepdf.open(pdf_path) as pdf:
+        meta=pikepdf.Stream(pdf,header)
+        pdf.pages[0].obj["/PieceInfo"]=pikepdf.Dictionary({"/Illustrator":pikepdf.Dictionary({"/Private":pikepdf.Dictionary({"/AIMetaData":meta})})})
+        pdf.save(ai)
+    r,a,*_=load_rules()
+    doc=inspect_pdf(ai,r)
+    assert [f["state"] for f in doc["ai_document_files"]]==["linked","missing"]
+    findings,_=analyze(doc,r,a,"digital")
+    links={f["object"]:f["status"] for f in findings if f["code"]=="image_link" and f["artboard"] is None}
+    assert links=={"kept 照片.jpg":"yellow","deleted.jpg":"red"}
+    summary=next(f for f in findings if f["code"]=="image_embedding_summary")
+    assert summary["status"]=="red" and summary["current"]["ai_header_links"]=={"linked":1,"missing":1}
+
+def test_ai_without_header_links_stays_unknown(tmp_path):
+    from pdf_engine import inspect_pdf
+    import pikepdf
+    pdf_path=tmp_path/"source.pdf";make_pdf(pdf_path,1)
+    ai=tmp_path/"plain.ai"
+    with pikepdf.open(pdf_path) as pdf:
+        pdf.save(ai)
+    r,a,*_=load_rules()
+    doc=inspect_pdf(ai,r)
+    assert doc["ai_document_files"] is None
