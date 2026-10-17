@@ -23,11 +23,11 @@
 | 疊印 | fillOverprint／strokeOverprint／文字 overprint 屬性 | 追蹤 ExtGState 與 q/Q、Form，白色 process 疊印紅燈；白墨 Spot 不等同 process white |
 | 透明度／混合 | opacity、blendingMode；Opacity Mask 灰燈 | ExtGState ca／CA／BM／SMask；不等於全功能透明度合成分析 |
 | 細線 | strokeWidth | 渲染 path 線寬；非等比變形、外觀效果仍需核對 |
-| 加工 | Layer／物件／Spot 名称關鍵字 | 色版名稱候選；不能證明加工線正確或為預期設定 |
+| 加工 | Layer／物件／Spot 名稱關鍵字 | 色版名稱候選；不能證明加工線正確或為預期設定 |
 | Hidden／Locked／Non-printing | 圖層及父層狀態、物件 hidden／locked | PDF 無法還原未輸出或已刪除的 Illustrator 物件 |
 | Contrast | 經核對的 sRGB 單色前景背景注記 | 自動支援不透明、無疊印／群組／遮罩、已證明單色矩形或白底的文字；使用渲染 RGB 作螢幕 sRGB 參考。照片／漸層／遮擋／特殊效果灰燈 |
 | 色覺模擬 | imageCapture Artboard PNG | PDF 轉 RGB 預覽；非軟打樣／分色打樣 |
-| 色彩資訊語意 | 需標註 semantic_pairs | 程式不能僅凭顏色判斷紅綠是否代表付款或分類 |
+| 色彩資訊語意 | 需標註 semantic_pairs | 程式不能僅憑顏色判斷紅綠是否代表付款或分類 |
 | PDF/X、ICC | 需最終 PDF | 讀版本、PDF/X Info／XMP 宣告、OutputIntent 及 ICC 存在／通道數；不驗證整套 PDF/X 規範 |
 
 ## TAC
@@ -36,7 +36,7 @@
 
 原生 8-bit CMYK 圖片每像素：`100 × (c + m + y + k) / 255`；計算 max、mean、`count(TAC > limit) / total × 100%`。先升為浮點，避免 uint8 溢位。這包含裁切區外／遮罩下像素，不是可見頁面的最終墨量。
 
-透明度、疊印、色彩轉換、紙材、RIP 與 ICC 分色會影響最終 TAC；此版本未做整頁 separation renderer。ICC 存在不表示有可直接讀取的通用 TAC 上限。上限必須来自廠商規格、已核對的 ICC 配套說明或使用者設定，且以規格來源優先。
+透明度、疊印、色彩轉換、紙材、RIP 與 ICC 分色會影響最終 TAC；此版本未做整頁 separation renderer。ICC 存在不表示有可直接讀取的通用 TAC 上限。上限必須來自廠商規格、已核對的 ICC 配套說明或使用者設定，且以規格來源優先。
 
 ## Effective PPI
 

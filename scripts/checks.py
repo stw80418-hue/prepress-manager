@@ -18,8 +18,12 @@ def analyze(doc, rules, access, scope="all"):
             "ai_version", "ai_creator_version", "black_coverage", "multichannel_black", "small_multichannel_black", "k_black", "large_black", "thin_multichannel", "dimensions", "bleed", "bleed_artwork", "uniform_artboards", "coverage",
             "document_color_space", "rgb", "color_mode", "color_unknown", "spot",
             "font_missing", "text_type", "outline_summary", "image_link", "image_embedding_summary", "image_ppi",
+            "font_size", "small_reverse_four", "safe_margin", "thin_line", "white_overprint", "overprint",
             "required_pdf_x", "required_pdf_version", "required_icc_profile", "printer_manual"
         }:
+            return
+        # Objects without overprint are not findings in the digital report; keep only overprint warnings.
+        if scope == "digital" and code == "overprint" and status == "green":
             return
         o = obj or {}
         findings.append(dict(id=f"Issue {len(findings)+1:03d}", code=code, status=status,
@@ -180,7 +184,7 @@ def analyze(doc, rules, access, scope="all"):
                  {"text": o.get("text", "")[:30], "font": o.get("font"), "weight": o.get("weight"), "size_pt": size, "color": fill, "reverse": o.get("reverse")}, rules["minimum_font_size_pt"],
                  "外框無法回推原始字級；印刷可讀性受紙材、印刷方式、網點與觀看距離影響。", "文字 > 字元：檢查字級，依需求調整副本；不要自動放大。", category="text")
             if size is not None and size <= rules["small_black_text_max_pt"] and cmyk and cmyk[3] >= rules["black_k_threshold"]:
-                emit("small_multichannel_black" if multi_black else "k_black", "red" if multi_black else "green", "小字套印風險" if multi_black else "小型黑字使用單 K", o, cmyk, "C0 M0 Y0 K100（依廠商規格）", "多版套印誤差可能產生彩邊。", "顏色面板檢查文字填色，與印刷廠确认小字黑色配方。", category="text")
+                emit("small_multichannel_black" if multi_black else "k_black", "red" if multi_black else "green", "小字套印風險" if multi_black else "小型黑字使用單 K", o, cmyk, "C0 M0 Y0 K100（依廠商規格）", "多版套印誤差可能產生彩邊。", "顏色面板檢查文字填色，與印刷廠確認小字黑色配方。", category="text")
             if small and o.get("reverse") and o.get("background_cmyk") and all(v > 0 for v in o["background_cmyk"]):
                 emit("small_reverse_four", "red", "小字反白＋四色背景：高印刷可讀性風險", o, category="text", reason="細小反白字容易因套印與網點擴大而糊合。")
             pair = o.get("contrast_pair")
@@ -196,7 +200,7 @@ def analyze(doc, rules, access, scope="all"):
             thin = any(k in str(o.get("weight", "")).lower() for k in access["thin_weight_keywords"])
             if small and ratio is not None and ratio < limit:
                 emit("small_low_contrast", "red", "小字＋低對比"+("＋細字重" if thin else "")+"：高可讀性風險", o,
-                     {"size":size, "weight":o.get("weight"), "contrast":ratio}, reason="小字、细筆畫與低對比會共同降低辨識度。", group="accessibility", category="accessibility")
+                     {"size":size, "weight":o.get("weight"), "contrast":ratio}, reason="小字、細筆畫與低對比會共同降低辨識度。", group="accessibility", category="accessibility")
             if small and o.get("cvd_difficult") and ratio is not None and ratio < limit:
                 emit("small_cvd", "red", "小字＋低對比＋色覺辨識困難", o, group="accessibility", category="accessibility")
 

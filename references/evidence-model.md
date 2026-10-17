@@ -4,7 +4,7 @@
 
 頂層：`schema_version:1`、`engine`、`source`、`artboards`、`objects`、`limitations`；可選 `metadata`、`semantic_pairs`。
 
-Artboard：`id`（唯一整數）、`name`、`rect`、`bleed_mm`（top/bottom/left/right 或 null）；可選 `preview_rect`。预覽檔應放在 inspector JSON 同目錄，名稱為 `artboard-01-original.png`。
+Artboard：`id`（唯一整數）、`name`、`rect`、`bleed_mm`（top/bottom/left/right 或 null）；可選 `preview_rect`。預覽檔應放在 inspector JSON 同目錄，名稱為 `artboard-01-original.png`。
 
 物件常用欄位：
 

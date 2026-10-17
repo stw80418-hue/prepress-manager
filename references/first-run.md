@@ -6,7 +6,7 @@
 python scripts/preflight.py /path/to/design.ai --scope digital --out /path/to/new-report
 ```
 
-輸出目錄必須不存在；腳本不覆寫原稿。PDF 相容 AI 只檢查 PDF 區；無 PDF 相容區時改用 Illustrator 原生腳本。
+輸出目錄必須不存在；省略 `--out` 時自動建在來源檔旁（`<檔名>-preflight-<時間>`）。腳本不覆寫原稿。`python` 請用 Skill 根目錄 `.venv` 內的 Python（安裝腳本已建立）。PDF 相容 AI 只檢查 PDF 區；無 PDF 相容區時改用 Illustrator 原生腳本。
 
 ## Illustrator 原生資料
 

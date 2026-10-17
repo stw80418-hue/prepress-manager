@@ -1,6 +1,6 @@
 interface:
   display_name: "Prepress Manager｜印前管理員"
-  short_description: "數位印刷健檢：色彩模式、文字外框、出血尺寸與圖片解析度"
-  default_prompt: "請使用 $prepress-manager，對我提供的檔案執行數位印刷重點健檢（色彩模式、文字外框、出血尺寸、解析度）。"
+  short_description: "數位印刷送印健檢：色彩、外框、出血、解析度、小字、細線、白色疊印"
+  default_prompt: "請使用 $prepress-manager，對我提供的檔案執行數位印刷重點健檢（色彩模式、文字外框、出血尺寸、解析度、圖片嵌入、小字、安全邊距、細線、白色疊印）。"
 policy:
   allow_implicit_invocation: true

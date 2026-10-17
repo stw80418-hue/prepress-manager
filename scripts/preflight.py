@@ -221,7 +221,7 @@ def report(out,doc,findings,special,previews,rules,provenance,scope):
         text=template.format(summary=summary,counts=counts,issues="\n\n".join(chunks) or "本次範圍未執行此類檢查。",
                              special="\n".join("- "+fmt(s) for s in special) or "未辨識到名稱候選；不代表無加工項目。",
                              limitations=limits,previews=links,
-                             issue_previews="\n\n".join(f"Artboard {p['artboard']}\n\n![Issue Preview]({p['issues']})\n\n未定位：{fmt(p['unplaced'])}" for p in previews) or "⚪ 無可用预覽；請參考物件／位置資料。")
+                             issue_previews="\n\n".join(f"Artboard {p['artboard']}\n\n![Issue Preview]({p['issues']})\n\n未定位：{fmt(p['unplaced'])}" for p in previews) or "⚪ 無可用預覽；請參考物件／位置資料。")
         (out/filename).write_text(text,encoding="utf-8")
 
 
@@ -258,7 +258,7 @@ def run(input_path,out,*,spec=None,settings=None,accessibility=None,scope="all",
         for issue in findings:
             if issue["code"] == "preview_missing":
                 issue.update(group="prepress", title="部分頁面問題預覽無法產生", reason="缺少原始預覽或渲染失敗。")
-        doc.setdefault("limitations", []).append("本次為數位印刷重點模式：色彩模式、文字外框、出血與尺寸、圖片解析度、圖片嵌入／連結狀態。顏色對比與色覺模擬未執行；其他未列項目不代表通過。3 mm／300 PPI 是工作預設，不是所有數位印刷機的統一標準，印刷廠規格優先。")
+        doc.setdefault("limitations", []).append("本次為數位印刷重點模式：色彩模式、文字外框、出血與尺寸、圖片解析度、圖片嵌入／連結狀態、AI 版本、四色黑、小字、安全邊距、細線與白色疊印。顏色對比與色覺模擬未執行；其他未列項目不代表通過。3 mm／300 PPI 是工作預設，不是所有數位印刷機的統一標準，印刷廠規格優先。")
     write_json(out/"INSPECTION.json",doc)
     write_json(out/"ISSUES.json",findings)
     write_json(out/"EFFECTIVE_RULES.json",{"print":rules,"accessibility":access,"provenance":provenance})
@@ -278,14 +278,16 @@ def run(input_path,out,*,spec=None,settings=None,accessibility=None,scope="all",
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument("input",type=Path)
-    p.add_argument("--out",type=Path,help="NEW output folder; defaults to timestamped skill/output folder")
+    p.add_argument("--out",type=Path,help="NEW output folder; defaults to <input-name>-preflight-<timestamp> next to the input")
     p.add_argument("--spec",type=Path)
     p.add_argument("--settings",type=Path,help="JSON print rule overrides; printer spec wins")
     p.add_argument("--accessibility-settings",type=Path)
     p.add_argument("--annotations",type=Path)
     p.add_argument("--pdf",type=Path,help="Also inspect a companion final PDF in a separate report; no unsafe object merging")
     p.add_argument("--scope",choices=["digital","all","text","images","color","tac","accessibility"],default="digital")
-    a=p.parse_args();out=a.out or ROOT/"output"/datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+    a=p.parse_args()
+    # Default beside the artwork so private reports never land inside the installed skill.
+    out=a.out or a.input.resolve().parent/f"{a.input.stem}-preflight-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
     try:
         findings=run(a.input,out,spec=a.spec,settings=a.settings,accessibility=a.accessibility_settings,scope=a.scope,annotations=a.annotations)
         if a.pdf:

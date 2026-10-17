@@ -8,7 +8,7 @@
     var parent = Folder.selectDialog("選擇健檢輸出資料夾（不修改 AI）");
     if (!parent) return;
     var folder = new Folder(parent.fsName + "/illustrator-inspection-" + new Date().getTime());
-    if (folder.exists || !folder.create()) { alert("无法建立全新輸出資料夾。"); return; }
+    if (folder.exists || !folder.create()) { alert("無法建立全新輸出資料夾。"); return; }
     function get(o,k,fallback) { try { var v=o[k]; return v === undefined ? fallback : v; } catch(e) { return fallback; } }
     function str(v) { return v === null || v === undefined ? "" : String(v); }
     function quote(s) { return '"'+str(s).replace(/\\/g,"\\\\").replace(/"/g,'\\"').replace(/\r/g,"\\r").replace(/\n/g,"\\n").replace(/\t/g,"\\t").replace(/[\x00-\x1f]/g,function(c){var h=c.charCodeAt(0).toString(16);return "\\u"+("0000"+h).slice(-4);})+'"'; }
@@ -42,7 +42,8 @@
         "路徑不等於外框文字；未有來源證據時無法確認外框文字與原始字級。",
         "Opacity Mask、Appearance 多重填色／效果、網格、外掛物件可能無法完整取得。",
         "文字背景、色彩資訊語意、Logo／QR 身分與反白狀態需另行標註。",
-        "文字範圍位置使用 TextFrame 包圍盒；精確字元邊界、文字變形及沿路徑排文需人工確認。"
+        "文字範圍位置使用 TextFrame 包圍盒；精確字元邊界、文字變形及沿路徑排文需人工確認。",
+        "Illustrator DOM 不提供 AI 儲存相容版本；請核對另存時選擇的版本。"
     ]};
     var i,j;
     for(i=0;i<doc.artboards.length;i++) data.artboards.push({id:i+1,name:doc.artboards[i].name,rect:rect(doc.artboards[i].artboardRect),bleed_mm:null});
@@ -72,8 +73,11 @@
     for(i=0;i<doc.pageItems.length;i++) {
         var item=doc.pageItems[i],t=get(item,"typename",""),o=base(item,i+1);
         if(t==="TextFrame") {
-            // Group consecutive characters by actual attributes; mixed size text is not collapsed.
-            var chars=item.characters,run=null,lastKey="";
+            // Group consecutive ranges by actual attributes; mixed size text is not collapsed.
+            // textRanges are formatting runs (fast); fall back to per-character reading if unavailable.
+            var chars=null,run=null,lastKey="";
+            try { chars=item.textRanges; if(!chars.length && item.characters.length) chars=null; } catch(e) { chars=null; }
+            if(!chars) chars=item.characters;
             for(j=0;j<chars.length;j++) {
                 var ca=chars[j].characterAttributes,tf=get(ca,"textFont",null);
                 var at={font:tf ? tf.name : null,weight:tf ? get(tf,"style",null) : null,
@@ -101,9 +105,16 @@
             if(get(item,"filled",false)) { o.fill=color(get(item,"fillColor",null)); o.overprint_fill=get(item,"fillOverprint",null); }
             if(get(item,"stroked",false)) { o.stroke=color(get(item,"strokeColor",null));o.stroke_width_pt=get(item,"strokeWidth",null);o.overprint_stroke=get(item,"strokeOverprint",null); }
             if(t==="PlacedItem" || t==="RasterItem") {
-                o.kind="image";var file=get(item,"file",null);
+                o.kind="image";var file=null,fileError=null;
+                try { file=item.file; } catch(e) { fileError=str(e.message || e); }
                 o.path=file ? file.fsName : null;
-                o.link_state=t==="PlacedItem" ? (file ? (file.exists ? "linked" : "missing") : "unknown") : (get(item,"embedded",null)===true ? "embedded" : file ? (file.exists ? "linked" : "missing") : "unknown");
+                if(t==="PlacedItem") {
+                    // Illustrator throws on PlacedItem.file when the linked file is gone; treat as missing, keep the message as evidence.
+                    o.link_state=file ? (file.exists ? "linked" : "missing") : fileError!==null ? "missing" : "unknown";
+                    if(fileError!==null) o.evidence+="；讀取連結檔失敗："+fileError+"（請在連結面板確認）";
+                } else {
+                    o.link_state=get(item,"embedded",null)===true ? "embedded" : file ? (file.exists ? "linked" : "missing") : "unknown";
+                }
                 o.image_color_space=str(get(item,"imageColorSpace",null));
                 var bb=get(item,"boundingBox",null),mx=get(item,"matrix",null);
                 if(bb && mx) {
