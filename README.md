@@ -4,7 +4,7 @@
 
 ## 安裝說明與操作手冊
 
-📘 **新手安裝說明＋操作手冊：留下 Email 免費索取 → [圈外設計 OUT OF DESIGN](https://out-of-design.com)**
+📘 **新手安裝說明＋操作手冊：留下 Email 免費索取 → [圈外設計 OUT OF DESIGN](https://out-of-design.com/index.php/prepress-manager/)**
 
 手冊內容：Codex／Claude Code 逐步安裝、第一次檢查、印刷廠規格怎麼給、Illustrator 指令碼用法、報告燈號判讀與常見問題。
 
